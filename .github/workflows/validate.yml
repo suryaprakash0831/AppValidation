@@ -1,0 +1,55 @@
+name: URL Validation With Dashboard
+
+on:
+  workflow_dispatch:
+    inputs:
+      file:
+        description: "Enter file path"
+        required: true
+        default: "urls.txt"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Validation Action
+        uses: ./
+        with:
+          file: ${{ github.event.inputs.file }}
+          retries: 3
+          delay: 2
+
+      - name: Upload Dashboard
+        uses: actions/upload-artifact@v3
+        with:
+          name: dashboard
+          path: dashboard/
+
+      - name: Deploy Dashboard to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          publish_dir: dashboard
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      # Teams notification
+      - name: Send Teams Message
+        if: failure()
+        run: |
+          curl -H 'Content-Type: application/json' -d '{"text":"URL Validation FAILED"}' ${{ secrets.TEAMS_WEBHOOK }}
+
+      # Telegram notification
+      - name: Telegram Notify
+        if: failure()
+        run: |
+          curl -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_TOKEN }}/sendMessage \
+          -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
+          -d text="URL Validation Failed. Check dashboard."
+
+      # WhatsApp notification (via CallMeBot)
+      - name: WhatsApp Notify
+        if: failure()
+        run: |
+          curl "https://api.callmebot.com/whatsapp.php?phone=${{ secrets.WHATSAPP_NUMBER }}&text=URL+Validation+Failed&apikey=${{ secrets.WHATSAPP_APIKEY }}"
