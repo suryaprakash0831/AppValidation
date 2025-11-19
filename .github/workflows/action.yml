@@ -1,0 +1,31 @@
+name: "URL Validator"
+description: "Validate URLs in a file with retries and dashboard output"
+
+inputs:
+  file:
+    required: true
+  retries:
+    required: false
+    default: "3"
+  delay:
+    required: false
+    default: "2"
+
+runs:
+  using: "composite"
+  steps:
+    - run: pip install requests
+      shell: bash
+
+    - run: python validate_urls.py ${{ inputs.file }} ${{ inputs.retries }} ${{ inputs.delay }}
+      shell: bash
+
+    - run: |
+        mkdir dashboard
+        cp report.json dashboard/report.json
+        cp dashboard/index.html dashboard/index.html
+      shell: bash
+
+outputs:
+  report: 
+    value: ${{ steps.output.outputs.report }}
