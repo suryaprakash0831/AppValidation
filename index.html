@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>URL Status Dashboard</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        .ok { background: #c8f7c5; }
+        .fail { background: #f7c5c5; }
+        canvas { width: 100%; max-width: 500px; }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+<h1>URL Validation Report</h1>
+
+<canvas id="chart"></canvas>
+
+<table id="table"></table>
+
+<script>
+fetch("report.json")
+  .then(r => r.json())
+  .then(data => {
+    let okCount = data.filter(x => x.status == 200).length;
+    let failCount = data.length - okCount;
+
+    new Chart(document.getElementById("chart"), {
+      type: "pie",
+      data: {
+        labels: ["Success", "Failed"],
+        datasets: [{ data: [okCount, failCount] }]
+      }
+    });
+
+    let table = "<tr><th>URL</th><th>Status</th><th>Message</th></tr>";
+    data.forEach(row => {
+      let cls = row.status == 200 ? "ok" : "fail";
+      table += `<tr class="${cls}">
+        <td>${row.url}</td>
+        <td>${row.status}</td>
+        <td>${row.message}</td>
+      </tr>`;
+    });
+    document.getElementById("table").innerHTML = table;
+  });
+</script>
+
+</body>
+</html>
